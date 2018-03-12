@@ -6,7 +6,6 @@ def string_to_num(string, translation_tables, split_method):
     ones=[[1,1], 'one', 'two', 'three', 'four', 'five','six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'nineteen']#from one to 
     tens=[[20,10], 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
     translation_table=[ones, tens]
-    
     """
     try:
         count=float(string)
@@ -26,4 +25,5 @@ def string_to_num(string, translation_tables, split_method):
                 value=(key-1)*step+start
                 if table[key]==part:
                     count=count+value
+    
     return count
