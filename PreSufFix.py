@@ -2,17 +2,14 @@
 
 import os
 
-def list_files(startpath):
-	"""https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python"""
-	for root, dirs, files in os.walk(startpath):
-		level = root.replace(startpath, '').count(os.sep)
-		indent = ' ' * 4 * (level)
-		print('{}{}/'.format(indent, os.path.basename(root)))
-		subindent = ' ' * 4 * (level + 1)
-		for f in files:
-			print('{}{}'.format(subindent, f))
-
-list_files('.')
+#https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
+for root, dirs, files in os.walk('.'):
+	level = root.replace('.', '').count(os.sep)
+	indent = ' ' * 4 * (level)
+	print('{}{}/'.format(indent, os.path.basename(root)))
+	subindent = ' ' * 4 * (level + 1)
+	for f in files:
+		print('{}{}'.format(subindent, f))
 
 while True:
 	print('')
@@ -33,6 +30,14 @@ while True:
 	if (PreOrSuf=='pre' or PreOrSuf=='suf') and (input('Anwser is "'+PreOrSuf+'". Correct? (Y/N): ')=='Y'):
 		break
 
+if PreOrSuf=='suf':
+	while True:
+		print('')
+		KeepExt=input('Do you want to keep the file extention? (Y/N): ')
+		
+		if (KeepExt=='Y' or KeepExt=='N') and (input('Anwser is "'+KeepExt+'". Correct? (Y/N): ')=='Y'):
+			break
+
 while True:
 	print('')
 	text=input('What should the '+PreOrSuf+'fix be?: ')
@@ -45,9 +50,11 @@ for filename in os.listdir(target):
 	#https://stackoverflow.com/questions/225735/batch-renaming-of-files-in-a-directory
 	if PreOrSuf=='pre':
 		os.rename(os.path.join(target, filename), os.path.join(target,text+filename))
-	
-	if PreOrSuf=='suf':
+	elif PreOrSuf=='suf' and KeepExt=='Y':
 		Ext=os.path.splitext(os.path.join(target, filename))[1]#https://stackoverflow.com/questions/541390/extracting-extension-from-filename-in-python
 		os.rename(os.path.join(target, filename), os.path.join(target,filename[:-len(Ext)]+text+Ext))
+	elif PreOrSuf=='suf' and KeepExt=='N':
+		Ext=os.path.splitext(os.path.join(target, filename))[1]
+		os.rename(os.path.join(target, filename), os.path.join(target,filename[:-len(Ext)]+text))
 
 print('Done.')
