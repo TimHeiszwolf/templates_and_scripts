@@ -57,6 +57,9 @@ while True:
 	replacements = getAllFilesInDir(getDir("What is the directory of the replacement files?"))
 	docs = getAllFilesInDir(getDir("What is the directory of the files to be replaced?"))
 	
+	if input('Correct input? (Y/N)').lower() != 'y':
+		continue
+	
 	if replacements != docs:
 		break
 	else:
