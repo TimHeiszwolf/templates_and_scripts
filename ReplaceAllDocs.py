@@ -38,6 +38,8 @@ def ReplaceAllDocs(replacements, docs):
 	Replaces all files with equal filenames.
 	"""
 	for replacement in replacements:
+		print('Replacing: ' + replaced.name)
+		
 		split = replacement.split("\\")
 		repname = split[len(split)-1]
 		replaced = False
@@ -51,7 +53,7 @@ def ReplaceAllDocs(replacements, docs):
 				replaced = True
 		
 		if (not replaced):
-			print("Didn't replace any file with " + replaced.name)
+			print("DID NOT replace any file with " + replaced.name)
 
 while True:
 	replacements = getAllFilesInDir(getDir("What is the directory of the replacement files?"))
