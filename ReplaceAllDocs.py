@@ -53,7 +53,7 @@ def ReplaceAllDocs(replacements, docs):
 				replaced = True
 		
 		if (not replaced):
-			print("DID NOT replace any file with " + replaced.name)
+			print("DID NOT replace any file with name " + replacement)
 
 while True:
 	replacements = getAllFilesInDir(getDir("What is the directory of the replacement files?"))
