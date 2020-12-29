@@ -56,8 +56,8 @@ def ReplaceAllDocs(replacements, docs):
 			print("DID NOT replace any file with name " + replacement)
 
 while True:
-	replacements = getAllFilesInDir(getDir("What is the directory of the replacement files?"))
-	docs = getAllFilesInDir(getDir("What is the directory of the files to be replaced?"))
+	replacements = getAllFilesInDir(getDir("What is the directory of the replacement files (source folder)?"))
+	docs = getAllFilesInDir(getDir("What is the directory of the files to be replaced (target folder)?"))
 	
 	if input('Correct input? (Y/N): ').lower() != 'y':
 		continue
