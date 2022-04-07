@@ -48,7 +48,7 @@ def ReplaceAllDocs(replacements, docs):
 			split = doc.split("\\")
 			docname = split[len(split)-1]
 			
-			if repname==docname:
+			if repname==docname and not (docname=="AlbumArtSmall.jpg" or docname=="Folder.jpg" or docname=="AlbumArtSmall.png" or docname=="Folder.png"):
 				shutil.copy2(replacement, doc)
 				replaced = True
 		
