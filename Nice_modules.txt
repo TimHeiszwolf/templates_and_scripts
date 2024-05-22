@@ -1,5 +1,0 @@
-Pandas: Nice data/table handeling.
-https://pandas.pydata.org/pandas-docs/stable/
-
-Tkinter: For making 'gui'.
-http://effbot.org/tkinterbook/tkinter-hello-again.htm
