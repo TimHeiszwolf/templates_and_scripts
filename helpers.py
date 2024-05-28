@@ -1,14 +1,33 @@
+# Data/vector handeling and extra math
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import math
 
+# Optimisation
 import scipy
 from scipy import optimize
 import sklearn.metrics as metrics
 
+#Plotting
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Error handeling
 import warnings
 
-## Data transformation
+# Time
+import time
+import datetime
+
+# System/file interaction
+import os
+import pickle# https://www.pythoncentral.io/how-to-pickle-unpickle-tutorial/
+import shelve# https://stackoverflow.com/questions/2960864/how-to-save-all-the-variables-in-the-current-python-session
+
+
+import warnings
+
+### Data transformation
 def transformToGrid(x, y, z, xName="x", yName="y", zName="z", xn=False, yn=False):
     """
     Transforms 3 arrays of (corresponding) x, y, z values into a grid. For example for use in a heat-maps, surface plots, contour plots, etc.
@@ -35,6 +54,60 @@ def transformToGrid(x, y, z, xName="x", yName="y", zName="z", xn=False, yn=False
             k=k+1
     
     return xGrid, yGrid, zGrid, pdDataframe.pivot(index=yName, columns=xName)[zName]
+
+### Performance
+## Progress bar
+from IPython.display import clear_output
+def update_progress(progress:float, bar_length=50:int, start_time=None, message=None):
+    """
+    Generates a progress bar and is based on the float progress which should be between 0 and 1. 
+    Can also display and make linear time estimations
+    
+    Inspired by: https://mikulskibartosz.name/how-to-display-a-progress-bar-in-jupyter-notebook-47bd4c2944bf
+    """
+    
+    if type(progress)!=float:
+        raise TypeError("Progress is not an float but an " + str(type(progress)))
+    elif progress<0 or progress>1:
+        warnings.warn("Progress is not between 0 and 1 but is " + str(progress))
+        progress = max([min([progress, 1]), 0])# Ensure the value of progress is beteween 0 and 1.
+    
+    block = int(round(bar_length * progress))
+    text = "Progress: [{0}] {1:.1f}%".format( "#" * block + "-" * (bar_length - block), progress * 100)
+    
+    if start_time!=None:
+        current_time = time.time()
+        
+        if (current_time - start_time)<0:
+            warnings.warn("Warning: time difference is progress bar is negative: "+str(current_time - start_time))
+        
+        progress_per_time = progress/(current_time - start_time + 0.0001)# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
+        expected_remaining_time = (1 - progress)/(progress_per_time + 0.0001)# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
+        
+        if progress_per_time > 0.1:
+            time_unit = "sec"
+        elif progress_per_time > 0.1/60:
+            time_unit = "min"
+            progress_per_time = progress_per_time*60
+            expected_remaining_time = expected_remaining_time*60
+        elif progress_per_time > 0.1/3600:
+            time_unit = "hour"
+            progress_per_time = progress_per_time*3600
+            expected_remaining_time = expected_remaining_time*3600
+        else:# progress_per_time > 0.1/86400:
+            time_unit = "day"
+            progress_per_time = progress_per_time*86400
+            expected_remaining_time = expected_remaining_time*86400
+        
+        text = text + " | "  + str(np.round(progress_per_time, 2)) + " %/" + time_unit + " | Time remaining " + str(np.round(expected_remaining_time, 1)) + " " + time_unit
+    
+    if message!=None:
+        text = text + " | " + message
+    
+    if progress!=1:
+        print(text.ljust(len(text)*5), end="\r")#https://stackoverflow.com/questions/5290994/remove-and-replace-printed-items
+    else:
+        print(text.ljust(len(text)*5))# Pad the text with a great amount of with space to prevent characters being left over from previous progress print.
 
 ### Fitting
 ## Polynomial fitting
@@ -99,10 +172,13 @@ def makePolynomialFit(xData, yData, displayResults=False, maxOrderFraction=1/5, 
 
 ## Gaussian procces fitting
 from sklearn.gaussian_process import GaussianProcessRegressor# https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel, Matern, RationalQuadratic, ExpSineSquared
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel, Matern, RationalQuadratic, ExpSineSquared, PairwiseKernel
 from sklearn.model_selection import train_test_split
+
 def make_Gaussian_proccess_model(input, output, kernel=RBF()+WhiteKernel(), validation_fraction=0.75, make_plot=False):
+    """
     
+    """
     if len(np.shape(input))==1:# If it is a simple 1D vector transform it into a two layered vector.
         input = input[:,None]
     elif np.shape(input)[0]>1:
