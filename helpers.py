@@ -25,8 +25,6 @@ import pickle# https://www.pythoncentral.io/how-to-pickle-unpickle-tutorial/
 import shelve# https://stackoverflow.com/questions/2960864/how-to-save-all-the-variables-in-the-current-python-session
 
 
-import warnings
-
 ### Data transformation
 def transformToGrid(x, y, z, xName="x", yName="y", zName="z", xn=False, yn=False):
     """
@@ -57,8 +55,8 @@ def transformToGrid(x, y, z, xName="x", yName="y", zName="z", xn=False, yn=False
 
 ### Performance
 ## Progress bar
-from IPython.display import clear_output
-def update_progress(progress:float, bar_length=50:int, start_time=None, message=None):
+#from IPython.display import clear_output
+def update_progress(progress:float, bar_length=50, start_time=None, message=None):
     """
     Generates a progress bar and is based on the float progress which should be between 0 and 1. 
     Can also display and make linear time estimations
@@ -89,15 +87,15 @@ def update_progress(progress:float, bar_length=50:int, start_time=None, message=
         elif progress_per_time > 0.1/60:
             time_unit = "min"
             progress_per_time = progress_per_time*60
-            expected_remaining_time = expected_remaining_time*60
+            expected_remaining_time = expected_remaining_time/60
         elif progress_per_time > 0.1/3600:
             time_unit = "hour"
             progress_per_time = progress_per_time*3600
-            expected_remaining_time = expected_remaining_time*3600
+            expected_remaining_time = expected_remaining_time/3600
         else:# progress_per_time > 0.1/86400:
             time_unit = "day"
             progress_per_time = progress_per_time*86400
-            expected_remaining_time = expected_remaining_time*86400
+            expected_remaining_time = expected_remaining_time/86400
         
         text = text + " | "  + str(np.round(progress_per_time, 2)) + " %/" + time_unit + " | Time remaining " + str(np.round(expected_remaining_time, 1)) + " " + time_unit
     
