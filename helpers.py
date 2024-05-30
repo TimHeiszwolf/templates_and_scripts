@@ -56,13 +56,14 @@ def transformToGrid(x, y, z, xName="x", yName="y", zName="z", xn=False, yn=False
 ### Performance
 ## Progress bar
 #from IPython.display import clear_output
-def update_progress(progress:float, bar_length=50, start_time=None, message=None):
+def update_progress(progress:float, bar_length=50, start_time=None, message=None, last_update_time=0, refresh_rate=2):
     """
     Generates a progress bar and is based on the float progress which should be between 0 and 1. 
-    Can also display and make linear time estimations
+    Can also display and make linear time estimations. You can also have it refresh at a certain rate. If you don't want that then leave last_update_time at zero.
     
     Inspired by: https://mikulskibartosz.name/how-to-display-a-progress-bar-in-jupyter-notebook-47bd4c2944bf
     """
+    current_time = time.time()
     
     if type(progress)!=float:
         raise TypeError("Progress is not an float but an " + str(type(progress)))
@@ -70,42 +71,46 @@ def update_progress(progress:float, bar_length=50, start_time=None, message=None
         warnings.warn("Progress is not between 0 and 1 but is " + str(progress))
         progress = max([min([progress, 1]), 0])# Ensure the value of progress is beteween 0 and 1.
     
-    block = int(round(bar_length * progress))
-    text = "Progress: [{0}] {1:.1f}%".format( "#" * block + "-" * (bar_length - block), progress * 100)
-    
-    if start_time!=None:
-        current_time = time.time()
+    if (current_time-last_update_time)>(1/refresh_rate) or progress==1:# Limit the update_rate
+        block = int(round(bar_length * progress))
+        text = "Progress: [{0}] {1:.1f}%".format( "#" * block + "-" * (bar_length - block), progress * 100)
         
-        if (current_time - start_time)<0:
-            warnings.warn("Warning: time difference is progress bar is negative: "+str(current_time - start_time))
+        if start_time!=None:
+            
+            if (current_time - start_time)<0:
+                warnings.warn("Warning: time difference is progress bar is negative: "+str(current_time - start_time))
+            
+            progress_per_time = progress/(current_time - start_time + (10**-9))# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
+            expected_remaining_time = (1 - progress)/(progress_per_time + (10**-9))# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
+            
+            if progress_per_time > 0.01:
+                time_unit = "sec"
+            elif progress_per_time > 0.01/60:
+                time_unit = "min"
+                progress_per_time = progress_per_time*60
+                expected_remaining_time = expected_remaining_time/60
+            elif progress_per_time > 0.01/3600:
+                time_unit = "hour"
+                progress_per_time = progress_per_time*3600
+                expected_remaining_time = expected_remaining_time/3600
+            else:# progress_per_time > 0.01/86400:
+                time_unit = "day"
+                progress_per_time = progress_per_time*86400
+                expected_remaining_time = expected_remaining_time/86400
+            
+            text = text + " | "  + str(np.round(100*progress_per_time, 2)) + " %/" + time_unit + " | " + str(np.round(expected_remaining_time, 1)) + " " + time_unit + " remaining"
         
-        progress_per_time = progress/(current_time - start_time + 0.0001)# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
-        expected_remaining_time = (1 - progress)/(progress_per_time + 0.0001)# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
+        if message!=None:
+            text = text + " | " + message
         
-        if progress_per_time > 0.1:
-            time_unit = "sec"
-        elif progress_per_time > 0.1/60:
-            time_unit = "min"
-            progress_per_time = progress_per_time*60
-            expected_remaining_time = expected_remaining_time/60
-        elif progress_per_time > 0.1/3600:
-            time_unit = "hour"
-            progress_per_time = progress_per_time*3600
-            expected_remaining_time = expected_remaining_time/3600
-        else:# progress_per_time > 0.1/86400:
-            time_unit = "day"
-            progress_per_time = progress_per_time*86400
-            expected_remaining_time = expected_remaining_time/86400
+        if progress!=1:
+            print(text.ljust(len(text)*5), end="\r")#https://stackoverflow.com/questions/5290994/remove-and-replace-printed-items
+        else:
+            print(text.ljust(len(text)*5))# Pad the text with a great amount of with space to prevent characters being left over from previous progress print.
         
-        text = text + " | "  + str(np.round(progress_per_time, 2)) + " %/" + time_unit + " | Time remaining " + str(np.round(expected_remaining_time, 1)) + " " + time_unit
-    
-    if message!=None:
-        text = text + " | " + message
-    
-    if progress!=1:
-        print(text.ljust(len(text)*5), end="\r")#https://stackoverflow.com/questions/5290994/remove-and-replace-printed-items
+        return current_time# Return the current time if an update occured to thus update the progress bar.
     else:
-        print(text.ljust(len(text)*5))# Pad the text with a great amount of with space to prevent characters being left over from previous progress print.
+        return last_update_time
 
 ### Fitting
 ## Polynomial fitting
@@ -173,7 +178,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor# https://scikit-le
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel, Matern, RationalQuadratic, ExpSineSquared, PairwiseKernel
 from sklearn.model_selection import train_test_split
 
-def make_Gaussian_proccess_model(input, output, kernel=RBF()+WhiteKernel(), validation_fraction=0.75, make_plot=False):
+def make_Gaussian_proccess_model(input, output, kernel=RBF()+WhiteKernel(), validation_fraction=0.25, make_plot=False):
     """
     
     """
