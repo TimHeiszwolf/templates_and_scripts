@@ -80,8 +80,8 @@ def update_progress(progress:float, bar_length=50, start_time=None, message=None
             if (current_time - start_time)<0:
                 warnings.warn("Warning: time difference is progress bar is negative: "+str(current_time - start_time))
             
-            progress_per_time = progress/(current_time - start_time + (10**-9))# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
-            expected_remaining_time = (1 - progress)/(progress_per_time + (10**-9))# Add a smale number to prevent 1/0 error. Doesn't matter for cases where you would use this function.
+            progress_per_time = progress/max([current_time - start_time, 10**-20])# Ensure a minimum to prevent 1/0 error.
+            expected_remaining_time = (1 - progress)/max([progress_per_time, 10**-20])# Ensure a minimum to prevent 1/0 error.
             
             if progress_per_time > 0.01:
                 time_unit = "sec"
