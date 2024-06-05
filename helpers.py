@@ -180,7 +180,7 @@ from sklearn.model_selection import train_test_split
 
 def make_Gaussian_proccess_model(input, output, kernel=RBF()+WhiteKernel(), validation_fraction=0.25, make_plot=False):
     """
-    
+    A function that makes a guassian procces model based on some data. An advanced way of fitting usefull in certain situations.
     """
     if len(np.shape(input))==1:# If it is a simple 1D vector transform it into a two layered vector.
         input = input[:,None]
@@ -219,3 +219,70 @@ def make_Gaussian_proccess_model(input, output, kernel=RBF()+WhiteKernel(), vali
         print("Validation error:", validation_error)
     
     return regressor, training_error, validation_error
+
+## (Torch) Neural Networks
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+def train_neural_net_torch(model, x_train, y_train, epochs, validation_fraction=0.3, batch_size=10, loss_function=nn.MSELoss(), optimizer=None, verbose=1):
+    """
+    A function which can train a (py)torch neural network. Based on this tutorial. https://machinelearningmastery.com/develop-your-first-neural-network-with-pytorch-step-by-step/. For basic neural nets this works fine, but for larger, more complex needs I would use keras.
+    """
+    history = {"epoch":[],"loss":[]}
+    if validation_fraction>0:
+        history["val_loss"]= []
+
+    if optimizer==None:
+        optimizer= optim.Adam(model.parameters(), lr=0.001)
+    
+    x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train, test_size=validation_fraction)# Split of 30% to use for validation.
+    
+    start_time = time.time()
+    last_update_time = time.time()
+    for epoch in range(1,epochs+1):
+        for i in range(0, len(x_train), batch_size):
+            # Validation
+            if validation_fraction>0:
+                x_batch = x_validation[i:i+batch_size]
+                y_predict = model(x_batch)
+                y_batch = y_validation[i:i+batch_size]
+                loss = loss_function(y_predict, y_batch)
+            
+            # Training
+            x_batch = x_train[i:i+batch_size]
+            y_predict = model(x_batch)
+            y_batch = y_train[i:i+batch_size]
+            loss = loss_function(y_predict, y_batch)
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        
+        history["epoch"].append(epoch)
+        y_predict = model(x_train)
+        loss = loss_function(y_predict, y_train).item()
+        history["loss"].append(loss)
+        message = "Epoch: " + str(epoch) + ", Loss: " + str(loss)
+        
+        if validation_fraction>0:
+            y_predict = model(x_validation)
+            loss = loss_function(y_predict, y_validation).item()
+            history["val_loss"].append(loss)
+            message = message + ", Validation loss: " + str(loss)
+
+        if verbose>=1:
+            last_update_time = update_progress(epoch/epochs, bar_length=50, start_time=start_time, message=message, last_update_time=last_update_time, refresh_rate=2)
+    
+    if verbose>=2:
+        fig, ax1 = plt.subplots(1, 1, figsize = (6,6))# Make a plot.
+        ax1.plot(history["epoch"], history["loss"], label="Training")
+        ax1.plot(history["epoch"], history["val_loss"], label="Validation")
+        ax1.set_xlabel("Epoch")
+        ax1.set_ylabel("Loss")
+        ax1.set_yscale('log')
+        ax1.set_title("Loss per epoch")
+        ax1.legend()
+        plt.show()
+    
+    return history
