@@ -224,31 +224,34 @@ def make_Gaussian_proccess_model(input, output, kernel=RBF()+WhiteKernel(), vali
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.model_selection import train_test_split
 
-def train_neural_net_torch(model, x_train, y_train, epochs, validation_fraction=0.3, batch_size=10, loss_function=nn.MSELoss(), optimizer=None, verbose=1):
+def train_neural_net_torch(model, x_train, y_train, epochs, validation_fraction=0.3, batch_size=10, loss_function=nn.MSELoss(), optimizer=None, early_stopping_threshold=None, verbose=1):
     """
-    A function which can train a (py)torch neural network. Based on this tutorial. https://machinelearningmastery.com/develop-your-first-neural-network-with-pytorch-step-by-step/. For basic neural nets this works fine, but for larger, more complex needs I would use keras.
+    A function which can train a (py)torch neural network. Based on this tutorial. https://machinelearningmastery.com/develop-your-first-neural-network-with-pytorch-step-by-step/. For basic neural nets this works fine, but for larger, more complex needs I would use purpuse build functions and/or Keras.
     """
     history = {"epoch":[],"loss":[]}
     if validation_fraction>0:
         history["val_loss"]= []
-
+    
     if optimizer==None:
         optimizer= optim.Adam(model.parameters(), lr=0.001)
     
+    if early_stopping_threshold==None:# If early stopping is not configured make it so early stopping can never happen.
+        early_stopping_threshold = 2*epochs
+    
     x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train, test_size=validation_fraction)# Split of 30% to use for validation.
     
-    start_time = time.time()
+    best_score = np.inf
+    best_epoch = 1
+    
+    start_time = time.time()# Both are used for the progress bar.
     last_update_time = time.time()
-    for epoch in range(1,epochs+1):
+    
+    epoch = 0# Variable used in the while loop.
+    while epoch<epochs:
+        epoch = epoch + 1
         for i in range(0, len(x_train), batch_size):
-            # Validation
-            if validation_fraction>0:
-                x_batch = x_validation[i:i+batch_size]
-                y_predict = model(x_batch)
-                y_batch = y_validation[i:i+batch_size]
-                loss = loss_function(y_predict, y_batch)
-            
             # Training
             x_batch = x_train[i:i+batch_size]
             y_predict = model(x_batch)
@@ -258,7 +261,15 @@ def train_neural_net_torch(model, x_train, y_train, epochs, validation_fraction=
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
+            # There is no need to do validation during batch training.
+            #if validation_fraction>0:
+            #    x_batch = x_validation[i:i+batch_size]
+            #    y_predict = model(x_batch)
+            #    y_batch = y_validation[i:i+batch_size]
+            #    loss = loss_function(y_predict, y_batch)
         
+        # Logging relevant data/history
         history["epoch"].append(epoch)
         y_predict = model(x_train)
         loss = loss_function(y_predict, y_train).item()
@@ -270,11 +281,19 @@ def train_neural_net_torch(model, x_train, y_train, epochs, validation_fraction=
             loss = loss_function(y_predict, y_validation).item()
             history["val_loss"].append(loss)
             message = message + ", Validation loss: " + str(loss)
+            
+            if loss < best_score:# Keep track of the best epoch and score
+                best_epoch = epoch
+                best_score = loss
+            
+            if (epoch - best_epoch) > early_stopping_threshold:
+                message = message + " | EARLY STOPPING AT EPOCH: " + str(epoch)
+                epoch = epochs# Increase the epoch variable so high that the early stopping happens.
 
-        if verbose>=1:
+        if verbose>=1:# Give basic progress update with message if verbose is enabled.
             last_update_time = update_progress(epoch/epochs, bar_length=50, start_time=start_time, message=message, last_update_time=last_update_time, refresh_rate=2)
     
-    if verbose>=2:
+    if verbose>=2:# Make some nice plots if verbose is high enough.
         fig, ax1 = plt.subplots(1, 1, figsize = (6,6))# Make a plot.
         ax1.plot(history["epoch"], history["loss"], label="Training")
         ax1.plot(history["epoch"], history["val_loss"], label="Validation")
